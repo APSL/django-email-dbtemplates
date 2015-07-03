@@ -6,7 +6,7 @@ from django.utils.translation import ungettext, ugettext_lazy as _
 from django.utils.safestring import mark_safe
 
 from dbtemplates.conf import settings
-from dbtemplates.models import (Template, remove_cached_template,
+from dbtemplates.models import (EmailTemplate, remove_cached_template,
                                 add_template_to_cache)
 from dbtemplates.utils.template import check_template_syntax
 
@@ -70,7 +70,7 @@ if settings.DBTEMPLATES_USE_TINYMCE:
     TemplateContentTextArea = AdminTinyMCE
 
 
-class TemplateAdminForm(forms.ModelForm):
+class EmailTemplateAdminForm(forms.ModelForm):
     """
     Custom AdminForm to make the content textarea wider.
     """
@@ -79,15 +79,16 @@ class TemplateAdminForm(forms.ModelForm):
         help_text=content_help_text, required=False)
 
     class Meta:
-        model = Template
-        fields = ('name', 'content', 'sites', 'creation_date', 'last_changed')
+        model = EmailTemplate
+        fields = ('name', 'subject', 'content', 'sites', 'creation_date',
+                  'last_changed')
 
 
-class TemplateAdmin(TemplateModelAdmin):
-    form = TemplateAdminForm
+class EmailTemplateAdmin(TemplateModelAdmin):
+    form = EmailTemplateAdminForm
     fieldsets = (
         (None, {
-            'fields': ('name', 'content'),
+            'fields': ('name', 'subject', 'content'),
             'classes': ('monospace',),
         }),
         (_('Advanced'), {
@@ -155,4 +156,4 @@ class TemplateAdmin(TemplateModelAdmin):
         return ", ".join([site.name for site in template.sites.all()])
     site_list.short_description = _('sites')
 
-admin.site.register(Template, TemplateAdmin)
+admin.site.register(EmailTemplate, EmailTemplateAdmin)

@@ -12,7 +12,7 @@ from django.test import TestCase
 from django.contrib.sites.models import Site
 
 from dbtemplates.conf import settings
-from dbtemplates.models import Template
+from dbtemplates.models import EmailTemplate
 from dbtemplates.utils.cache import get_cache_backend, get_cache_key
 from dbtemplates.utils.template import (get_template_source,
                                         check_template_syntax)
@@ -32,9 +32,9 @@ class DbTemplatesTestCase(TestCase):
             domain="example.com", name="example.com")
         self.site2, created2 = Site.objects.get_or_create(
             domain="example.org", name="example.org")
-        self.t1, _ = Template.objects.get_or_create(
+        self.t1, _ = EmailTemplate.objects.get_or_create(
             name='base.html', content='base')
-        self.t2, _ = Template.objects.get_or_create(
+        self.t2, _ = EmailTemplate.objects.get_or_create(
             name='sub.html', content='sub')
         self.t2.sites.add(self.site2)
 
@@ -45,7 +45,7 @@ class DbTemplatesTestCase(TestCase):
     def test_basiscs(self):
         self.assertEqual(list(self.t1.sites.all()), [self.site1])
         self.assertTrue("base" in self.t1.content)
-        self.assertEqual(list(Template.objects.filter(sites=self.site1)),
+        self.assertEqual(list(EmailTemplate.objects.filter(sites=self.site1)),
                          [self.t1, self.t2])
         self.assertEqual(list(self.t2.sites.all()), [self.site1, self.site2])
 
@@ -53,7 +53,7 @@ class DbTemplatesTestCase(TestCase):
         old_add_default_site = settings.DBTEMPLATES_ADD_DEFAULT_SITE
         try:
             settings.DBTEMPLATES_ADD_DEFAULT_SITE = False
-            self.t3 = Template.objects.create(
+            self.t3 = EmailTemplate.objects.create(
                 name='footer.html', content='footer')
             self.assertEqual(list(self.t3.sites.all()), [])
         finally:
@@ -64,10 +64,10 @@ class DbTemplatesTestCase(TestCase):
         old_site_id = django_settings.SITE_ID
         try:
             settings.DBTEMPLATES_ADD_DEFAULT_SITE = False
-            t_site1 = Template.objects.create(
+            t_site1 = EmailTemplate.objects.create(
                 name='copyright.html', content='(c) example.com')
             t_site1.sites.add(self.site1)
-            t_site2 = Template.objects.create(
+            t_site2 = EmailTemplate.objects.create(
                 name='copyright.html', content='(c) example.org')
             t_site2.sites.add(self.site2)
 
@@ -89,13 +89,13 @@ class DbTemplatesTestCase(TestCase):
 
     def test_error_templates_creation(self):
         call_command('create_error_templates', force=True, verbosity=0)
-        self.assertEqual(list(Template.objects.filter(sites=self.site1)),
-                         list(Template.objects.filter()))
-        self.assertTrue(Template.objects.filter(name='404.html').exists())
+        self.assertEqual(list(EmailTemplate.objects.filter(sites=self.site1)),
+                         list(EmailTemplate.objects.filter()))
+        self.assertTrue(EmailTemplate.objects.filter(name='404.html').exists())
 
     def test_automatic_sync(self):
         admin_base_template = get_template_source('admin/base.html')
-        template = Template.objects.create(name='admin/base.html')
+        template = EmailTemplate.objects.create(name='admin/base.html')
         self.assertEqual(admin_base_template, template.content)
 
     def test_sync_templates(self):
@@ -107,13 +107,13 @@ class DbTemplatesTestCase(TestCase):
             temp_template.write('temp test')
             settings.TEMPLATE_DIRS = (temp_template_dir,)
             self.assertFalse(
-                Template.objects.filter(name='temp_test.html').exists())
+                EmailTemplate.objects.filter(name='temp_test.html').exists())
             call_command('sync_templates', force=True,
                          verbosity=0, overwrite=FILES_TO_DATABASE)
             self.assertTrue(
-                Template.objects.filter(name='temp_test.html').exists())
+                EmailTemplate.objects.filter(name='temp_test.html').exists())
 
-            t = Template.objects.get(name='temp_test.html')
+            t = EmailTemplate.objects.get(name='temp_test.html')
             t.content = 'temp test modified'
             t.save()
             call_command('sync_templates', force=True,
@@ -125,7 +125,7 @@ class DbTemplatesTestCase(TestCase):
                          delete=True, overwrite=DATABASE_TO_FILES)
             self.assertTrue(os.path.exists(temp_template_path))
             self.assertFalse(
-                Template.objects.filter(name='temp_test.html').exists())
+                EmailTemplate.objects.filter(name='temp_test.html').exists())
         finally:
             temp_template.close()
             settings.TEMPLATE_DIRS = old_template_dirs
@@ -135,9 +135,9 @@ class DbTemplatesTestCase(TestCase):
         self.assertTrue(isinstance(get_cache_backend(), BaseCache))
 
     def test_check_template_syntax(self):
-        bad_template, _ = Template.objects.get_or_create(
+        bad_template, _ = EmailTemplate.objects.get_or_create(
             name='bad.html', content='{% if foo %}Bar')
-        good_template, _ = Template.objects.get_or_create(
+        good_template, _ = EmailTemplate.objects.get_or_create(
             name='good.html', content='{% if foo %}Bar{% endif %}')
         self.assertFalse(check_template_syntax(bad_template)[0])
         self.assertTrue(check_template_syntax(good_template)[0])

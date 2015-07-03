@@ -2,7 +2,7 @@ from django.contrib.sites.models import Site
 from django.db import router
 from django.template import TemplateDoesNotExist
 
-from dbtemplates.models import Template
+from dbtemplates.models import EmailTemplate
 from dbtemplates.utils.cache import (cache, get_cache_key,
                                      set_and_return, get_cache_notfound_key)
 from django.template.loader import BaseLoader
@@ -20,8 +20,8 @@ class Loader(BaseLoader):
     is_usable = True
 
     def load_and_store_template(self, template_name, cache_key, site, **params):
-        template = Template.objects.get(name__exact=template_name, **params)
-        db = router.db_for_read(Template, instance=template)
+        template = EmailTemplate.objects.get(name__exact=template_name, **params)
+        db = router.db_for_read(EmailTemplate, instance=template)
         display_name = 'dbtemplates:%s:%s:%s' % (db, template_name, site.domain)
         return set_and_return(cache_key, template.content, display_name)
 
@@ -63,11 +63,11 @@ class Loader(BaseLoader):
         try:
             return self.load_and_store_template(template_name, cache_key,
                                                 site, sites__in=[site.id])
-        except (Template.MultipleObjectsReturned, Template.DoesNotExist):
+        except (EmailTemplate.MultipleObjectsReturned, EmailTemplate.DoesNotExist):
             try:
                 return self.load_and_store_template(template_name, cache_key,
                                                     site, sites__isnull=True)
-            except (Template.MultipleObjectsReturned, Template.DoesNotExist):
+            except (EmailTemplate.MultipleObjectsReturned, EmailTemplate.DoesNotExist):
                 pass
 
         # Mark as not-found in cache.

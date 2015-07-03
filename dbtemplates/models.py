@@ -18,13 +18,14 @@ except ImportError:
     now = datetime.now
 
 
-class Template(models.Model):
+class EmailTemplate(models.Model):
     """
     Defines a template model for use with the database template loader.
     The field ``name`` is the equivalent to the filename of a static template.
     """
     name = models.CharField(_('name'), max_length=100,
                             help_text=_("Example: 'flatpages/default.html'"))
+    subject = models.TextField(_('subject'), blank=True)
     content = models.TextField(_('content'), blank=True)
     sites = models.ManyToManyField(Site, verbose_name=_(u'sites'),
                                    blank=True, null=True)
@@ -65,7 +66,7 @@ class Template(models.Model):
         # populate the template instance with its content.
         if settings.DBTEMPLATES_AUTO_POPULATE_CONTENT and not self.content:
             self.populate()
-        super(Template, self).save(*args, **kwargs)
+        super(EmailTemplate, self).save(*args, **kwargs)
 
 
 def add_default_site(instance, **kwargs):
@@ -81,6 +82,6 @@ def add_default_site(instance, **kwargs):
         instance.sites.add(current_site)
 
 
-signals.post_save.connect(add_default_site, sender=Template)
-signals.post_save.connect(add_template_to_cache, sender=Template)
-signals.pre_delete.connect(remove_cached_template, sender=Template)
+signals.post_save.connect(add_default_site, sender=EmailTemplate)
+signals.post_save.connect(add_template_to_cache, sender=EmailTemplate)
+signals.pre_delete.connect(remove_cached_template, sender=EmailTemplate)
